@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Stronger Type Safety with F#</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.12/css/regular.css" integrity="sha384-RGDxJbFQcd3/Rei8rYb+3xO3YREd0abxm8WfLkYj7j4HHo5ZVuNUGVx8H8GbpFTQ" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.12/css/fontawesome.css" integrity="sha384-rnr8fdrJ6oj4zli02To2U/e6t1qG8dvJ8yNZZPsKHcU7wFK3MGilejY5R/cUc5kf" crossorigin="anonymous">
+  <style>
+    @import url(https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700,700i|Source+Code+Pro:400,400i,700,700i|Yantramanav:300);
+
+    body {
+      font-family: 'Open Sans';
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: 'Yantramanav';
+      font-weight: lighter;
+    }
+
+    .remark-code,
+    .remark-inline-code {
+      font-family: 'Source Code Pro';
+    }
+
+    .bold {
+      background-color: #06a7e2; /*#16a085;*/
+      color: white;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .muted {
+      opacity: 0.6;
+    }
+
+    .success {
+      color: #27ae60;
+    }
+
+    .error {
+      color: #c0392b;
+    }
+
+    hr {
+      border: none;
+      border-top: dashed 2px hsla(0, 0%, 74%, 1);
+    }
+
+    .important::before {
+      position: absolute;
+      background-color: #ffe066;
+      border-radius: 5px 0 0 5px;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      padding: 1rem;
+      content: '\f005';
+      color: #c88d04;
+      font-family: Font Awesome\ 5 Free;
+    }
+
+    .important {
+      position: relative;
+      background-color: #fff9db;
+      border-radius: 5px;
+      padding: 1rem 1rem 1rem 4.3rem;
+    }
+
+    .important > p:first-child { margin-top: 0; }
+    .important > p:last-child { margin-bottom: 0; }
+  </style>
+</head>
+
+<body>
+  <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+  </script>
+  <script>
+    var slideshow = remark.create({
+      sourceUrl: './slides.md',
+      countIncrementalSlides: false,
+      highlightLanguage: 'f#',
+      highlightStyle: 'vs'
+    });
+  </script>
+</body>
+
+</html>
