@@ -323,24 +323,65 @@ TODO: It's possible to model F# DU types in C# as a _visitor pattern_.
 
 ---
 
-# Nullability in other languages
+# Coming to C# 8.x
 
-- C# is moving towards 'non-nullable by default' in C# 8.0:
-    ```c#
-    class Person
+C# is moving towards 'non-nullable by default' in C# 8.0:
+
+```c#
+class Person
+{
+    public string First;   // Not null
+    public string? Middle; // May be null
+    public string Last;    // Not null
+}
+```
+
+---
+
+# Coming to C# 8.x
+
+Also implementing records:
+
+```c#
+class Person(string First, string Last);
+```
+
+Translates to
+
+```c#
+class Person : IEquatable<Person>
+{
+    public string First { get; }
+    public string Last { get; }
+
+    public Person(string First, string Last);
+
+    public void Deconstruct(out string First, out string Last);
+
+    public bool Equals(Person other);
+
+    public override bool Equals(object obj);
+    public override int GetHashCode();
+}
+```
+
+---
+
+# Coming to C# 8.x
+
+Also implementing pattern matching _expressions_:
+
+```c#
+class Person(string First, string Last);
+
+var someResult =
+    person switch
     {
-        public string FirstName;   // Not null
-        public string? MiddleName; // May be null
-        public string LastName;    // Not null
-    }
-    ```
-
-- TypeScript has first-class support for union types.
-    ```ts
-    function length(s: string|null): int|null { /*...*/ }
-    ```
-
-- Many other languages have first-class support for unions.
+        Professor p => $"Prof. {p.First} {P.Last}";
+        Student p => $"{p.First} {P.Last} (Student)";
+        _ => $"Unknown";
+    };
+```
 
 ---
 
@@ -821,6 +862,9 @@ class: agenda, agenda-6
 ---
 
 # References
+
+- **The future of C# | Microsoft Build 2018**<br>
+    https://channel9.msdn.com/Events/Build/2018/BRK2155
 
 - **DogeConf 2018: Domain Modelling** - _Tom Davies_<br>
     Video should be available soon
