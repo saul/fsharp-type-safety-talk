@@ -41,12 +41,18 @@
     }
 
     .error {
-      color: #c0392b;
+      background-color: #c0392b;
+      color: white;
+      padding: 0.5em;
     }
 
     hr {
       border: none;
       border-top: dashed 2px hsla(0, 0%, 74%, 1);
+    }
+
+    pre {
+      white-space: pre-wrap;
     }
 
     .important::before {
@@ -69,8 +75,15 @@
       padding: 1rem 1rem 1rem 4.3rem;
     }
 
-    .important > p:first-child { margin-top: 0; }
-    .important > p:last-child { margin-bottom: 0; }
+    .remark-slide-content > div > :first-child { margin-top: 0; }
+    .remark-slide-content > div > :last-child { margin-bottom: 0; }
+
+    li {
+      padding: 0.5em 0;
+    }
+
+    li > :first-child { margin-top: 0; }
+    li > :last-child { margin-bottom: 0; }
   </style>
 </head>
 

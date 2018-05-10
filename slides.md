@@ -9,7 +9,6 @@ Stronger Type Safety in F#
 
 # Agenda
 
-1. Me
 1. Introduction
 1. Type safety in F#
 1. Existential types
@@ -24,8 +23,8 @@ Stronger Type Safety in F#
     - single-case DUs / tiny-types
     - DU - can be done in OO but here is v easy (first class visitor pattern)
 - the things we've built on this
-    - existentials - from first principles
     - GADTs - see Remco's noddy example - parser
+    - existentials - from first principles
     - HLists
     - 'anulus of power'
         - input: unsafe - command args &c
@@ -34,25 +33,39 @@ Stronger Type Safety in F#
 
 ---
 
-# Who I am
+# Hello!
 
-- Hi, I'm Saul
-- Joined G-Research as a grad in Sept 2016
-- Was an intern in RQRD (now RQS and RQF) for 3 months in 2015
+Hi, I'm Saul
+
+Joined G-Research as a grad in Sept 2016
+
+Previously an intern in RQRD (now RQS & RQF) for 3 months in 2015
 
 ---
 
 # What I am not
 
-- An expert in functional programming
-- Here to be a zealot
-- Speaking from an ivory tower
+An expert in functional programming
+
+Here to be a zealot
+
+Speaking from an ivory tower
 
 ---
 
 # Introduction
 
-- TODO
+Whirlwind tour of how F# enables stronger type safety compared to other languages.
+
+Some of the concepts have been talked about more thoroughly already.
+
+Others have only been touched upon and I'll expand on.
+
+.important[
+    Key takeaways will be starred and highlighted like this.
+]
+
+**Let's go!**
 
 ---
 
@@ -82,8 +95,6 @@ Famous quote from the inventor of the _null_ reference himself:
 
 --
 
-Null...
-
 1. subverts types .muted[(can be used for any reference type)]
 1. is a special case .muted[(has to checked for everywhere)]
 1. makes poor APIs .muted[(e.g. `String.IsNullOrEmpty`)]
@@ -98,7 +109,7 @@ It's inevitable it will wind up conflated somewhere.
 
 --
 
-**We can do better!**
+**We can do better!** 💪
 
 ---
 
@@ -158,7 +169,9 @@ let baz : MyLittleType = null
 
 --
 
-.error[error FS0043: The type 'MyLittleType' does not have 'null' as **a proper value**]
+.error[
+    `error FS0043: The type 'MyLittleType' does not have 'null' as a proper value`
+]
 
 ---
 
@@ -172,7 +185,7 @@ class: bold
 
 `null` in OO languages represents the lack of an instance.
 
-Why don't we encode that in the type system?
+**So why don't we encode that in the type system?**
 
 ---
 
@@ -189,19 +202,31 @@ type Option<'T> =
 `Option<'T>` is part of the F# core library and represents a missing value, or a value.
 
 .important[
-Seeing `null` anywhere in F# is a huge code smell.
+Seeing `null` anywhere in F# is a huge code smell. 💩
 ]
+
+---
+
+# Discriminated union types
+
+aka _union_ types.
+
+```f#
+type Option<'T> =
+    | None                  // parameterless case
+    | Some of value: 'T     // case with a single generic parameter
+```
 
 ---
 
 # Using union types
 
 ```f#
-let nothing = None
-val nothing : Option<Object>
+let nothing = None  // This can satisfy any 'T in Option<'T>
+val nothing : Option<'T>
 
-let hello = Some 15
-val hello : Option<int>
+let answer = Some 42
+val answer : Option<int>
 ```
 --
 <hr>
@@ -209,16 +234,17 @@ val hello : Option<int>
 Pulling values out of cases:
 
 ```f#
-match hello with
+match answer with
 | None ->
-    printfn "There was nothing here :("
-| Some value ->
-    printfn "I found this: %O" value
+    printfn "There is no answer :("
+| Some underlyingInt -> // Pattern is `Some underlyingInt`
+    printfn "Answer to everything: %d" underlyingInt
+    // ==> Answer to everything: 42
 ```
 
-.important[
-    We must handle every case.
-]
+This is called _pattern matching_.
+
+Can also pattern match on strings, integers, records, lists, arrays - very powerful.
 
 ---
 
@@ -232,23 +258,37 @@ let checkForEmpty (foo : Option<int>) =
 
 --
 
-.error[warning FS0025: Incomplete pattern matches on this expression. For example, the value 'Some (_)' may indicate a case not covered by the pattern(s).]
+.error[
+    `warning FS0025: Incomplete pattern matches on this expression. For example, the value 'Some (_)' may indicate a case not covered by the pattern(s).`
+]
 
-(Only a warning, but we all have Warnings As Errors, right?)
+(Only a warning, but we all have Warnings As Errors 😉)
 
+.important[
 Every case must be handled.
+]
 
---
+---
 
-We've hit Tony Hoare's goal!
+class: bold
+
+# We've hit Tony Hoare's goal! 🎉
 
 > My goal was to ensure that all use of references should be absolutely safe, with **checking performed automatically by the compiler**.
 
 ---
 
+# 
+
+TODO: None compiles down to null!
+
+---
+
 # Union types in C#
 
-Remember - F# and C# compile down to IL which has the same type system.
+F# and C# compile down to IL which has the same type system.
+
+![](option.png)
 
 TODO: It's possible to model F# union types in C# as a _visitor pattern_.
 
@@ -263,6 +303,8 @@ Examples of sum types in languages:
 Examples of union types:
 
 - Enums, unions in C/C++
+
+TODO do we need this?
 
 ---
 
@@ -335,13 +377,49 @@ The `private` in the tiny type definition is optional. However, it gives us a **
 type EmailAddress = private EmailAddress of string
 ```
 
-Nonsense functions, such as `String.Substring` are not possible on a `EmailAddress` instance.
+```f#
+let myEmail = EmailAddress.tryParse "saul.rennison@gresearch.co.uk"
+match myEmail with
+| None -> printfn "Could not parse"
+| Some email ->
+    let emailParts = email.Split '@'
+    // ...
+```
 
-This is because there are no implicit casts back to the underlying string.
+--
 
-TODO: finish this
+.error[
+    `error FS0039: The field, constructor or member 'Split' is not defined.`
+]
 
-The only functions available for `EmailAddress` are ones we write
+We can't implicitly access the underlying string.
+
+The only methods/functions available for `EmailAddress` are ones we write.
+
+---
+
+# Single-case discriminated unions
+
+```f#
+type EmailAddress = private EmailAddress of string
+```
+
+Forces you to put your domain logic in one place:
+
+```f#
+module EmailAddress =
+    let tryParse (email : string) = // ...
+    let localPart (EmailAddress email) =
+        email.Split('@').[0]
+```
+
+.important[
+    - Value is validated at construction.
+]
+
+--
+
+TomD did a great talk on domain modelling last Thursday.
 
 ---
 
