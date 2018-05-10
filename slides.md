@@ -7,13 +7,16 @@ Stronger Type Safety in F#
 
 ---
 
+name: agenda
+
 # Agenda
 
 1. Introduction
 1. Type safety in F#
-1. Existential types
 1. Generalised ADTs
+1. Existential types
 1. Annulus of power
+1. References
 
 ???
 
@@ -33,23 +36,30 @@ Stronger Type Safety in F#
 
 ---
 
-# Hello!
-
-Hi, I'm Saul
-
-Joined G-Research as a grad in Sept 2016
-
-Previously an intern in RQRD (now RQS & RQF) for 3 months in 2015
+template: agenda
+class: agenda, agenda-1
 
 ---
 
-# What I am not
+# Hello!
 
-An expert in functional programming
+☑️ Hi, I'm Saul
 
-Here to be a zealot
+☑️ Joined G-Research as a grad in Sept 2016
 
-Speaking from an ivory tower
+☑️ Previously an intern in RQRD (now RQS & RQF) for 3 months in 2015
+
+--
+
+.right-image[
+![](./youre-wrong.jpg)
+]
+
+❌ An expert in functional programming
+
+❌ Here to be a zealot
+
+❌ Speaking from an ivory tower
 
 ---
 
@@ -69,27 +79,44 @@ Others have only been touched upon and I'll expand on.
 
 ---
 
+template: agenda
+class: agenda, agenda-2
+
+---
+
 class: bold
 
 # `NullReferenceException: Object reference not set to an instance of an object`
 
-???
+---
 
-So, what's the problem? 
+class: middle, center
+
+![](./sad-panda.jpg)
 
 ---
 
-# Billion Dollar Mistake
+# 
 
-Famous quote from the inventor of the _null_ reference himself:
+.right-image[
+![](./tony-hoare.jpg)
+]
 
-> I call it my billion-dollar mistake. It was the invention of the null reference in 1965. [...] My goal was to ensure that **all use of references should be absolutely safe**, with checking performed automatically by the compiler. But I couldn't resist the temptation to put in a null reference, simply because it was so easy to implement.
+> I call it my billion-dollar mistake. It was the invention of the null reference in 1965.
+
+--
+
+> My goal was to ensure that **all use of references should be absolutely safe**, with checking performed automatically by the compiler.
+
+--
+
+> But I couldn't resist the temptation to put in a null reference, simply because it was so easy to implement.
 >
 > -- <cite>Tony Hoare<cite>
 
 ---
 
-# Billion Dollar Mistake
+# What's wrong with `null`?
 
 `null` is a value used to represent the lack of a value. This is the problem.
 
@@ -115,16 +142,15 @@ It's inevitable it will wind up conflated somewhere.
 
 name: nulls-in-fsharp
 
-# Nulls in F#
+# Nulls in F#&nbsp;
 
 Definition of a simple *record* type in F#:
 
 ```f#
-type MyLittleType =
-    {
-        Foo : string
-        Bar : int
-    }
+type MyLittleType = {
+    Foo : string
+    Bar : int
+}
 ```
 
 ---
@@ -134,10 +160,8 @@ template: nulls-in-fsharp
 The above is similar to this C# (and essentially compiles down to):
 
 ```c#
-public class MyLittleType // Equatable, Comparable, etc.
-{
-    public MyLittleType(string foo, int bar)
-    {
+public class MyLittleType { // Equatable, Comparable, etc.
+    public MyLittleType(string foo, int bar) {
         this.Foo = foo;
         this.Bar = bar;
     }
@@ -191,7 +215,7 @@ class: bold
 
 # Discriminated union types
 
-aka _union_ types.
+aka _tagged unions_ / _sum_ types.
 
 ```f#
 type Option<'T> =
@@ -209,7 +233,7 @@ Seeing `null` anywhere in F# is a huge code smell. 💩
 
 # Discriminated union types
 
-aka _union_ types.
+aka _tagged unions_ / _sum_ types.
 
 ```f#
 type Option<'T> =
@@ -219,14 +243,14 @@ type Option<'T> =
 
 ---
 
-# Using union types
+# Using discriminated unions
 
 ```f#
 let nothing = None  // This can satisfy any 'T in Option<'T>
 val nothing : Option<'T>
 
-let answer = Some 42
-val answer : Option<int>
+let instance = Some { Foo = "Hello world"; Bar = 5 }
+val instance : Option<MyLittleType>
 ```
 --
 <hr>
@@ -234,12 +258,12 @@ val answer : Option<int>
 Pulling values out of cases:
 
 ```f#
-match answer with
+match instance with
 | None ->
-    printfn "There is no answer :("
-| Some underlyingInt -> // Pattern is `Some underlyingInt`
-    printfn "Answer to everything: %d" underlyingInt
-    // ==> Answer to everything: 42
+    printfn "There is nothing here 😢"
+| Some underlyingValue -> // Pattern is `Some underlyingValue`
+    printfn "Foo is '%s'" underlyingValue.Foo
+    // ==> Foo is 'Hello world'
 ```
 
 This is called _pattern matching_.
@@ -251,18 +275,17 @@ Can also pattern match on strings, integers, records, lists, arrays - very power
 # Exhaustive pattern matching
 
 ```f#
-let checkForEmpty (foo : Option<int>) =
+let checkForEmpty (foo : Option<MyLittleType>) =
     match foo with
-    | None -> printfn "Nothing here"
+    | Some underlyingValue ->
+        printfn "Bar is '%d'" underlyingValue.Bar
 ```
 
 --
 
 .error[
-    `warning FS0025: Incomplete pattern matches on this expression. For example, the value 'Some (_)' may indicate a case not covered by the pattern(s).`
+    `error FS0025: Incomplete pattern matches on this expression. For example, the value 'Some (_)' may indicate a case not covered by the pattern(s).`
 ]
-
-(Only a warning, but we all have Warnings As Errors 😉)
 
 .important[
 Every case must be handled.
@@ -278,33 +301,25 @@ class: bold
 
 ---
 
-# 
+# Aside
 
-TODO: None compiles down to null!
+Cheekily, `None` compiles down to `null` in the IL.
+
+This is a performance optimisation under-the-hood.
+
+This is fine because the **dev never has to care about nulls** - the compiler takes care of that for us.
 
 ---
 
-# Union types in C#
-
-F# and C# compile down to IL which has the same type system.
+# What `Option` compiles to
 
 ![](option.png)
 
-TODO: It's possible to model F# union types in C# as a _visitor pattern_.
-
 ---
 
-# Sum types vs. union types
+# Discriminated unions in C#&nbsp;
 
-Examples of sum types in languages:
-
-- Structs, classes
-
-Examples of union types:
-
-- Enums, unions in C/C++
-
-TODO do we need this?
+TODO: It's possible to model F# DU types in C# as a _visitor pattern_.
 
 ---
 
@@ -331,17 +346,23 @@ TODO do we need this?
 
 # (Mis-)using built-in types
 
-Built-in types, like ints and strings, are often used to represent values that must fit some constraints. The presence of these constraints is not apparent from the type system.
+Built-in types, like ints and strings, are often used to represent values that must fit some constraints.
+
+These constraints are not apparent from the type system.
+
+--
 
 For example:
 
 ```c#
-public bool SendEmail(string from, string to, string body) { /* ... */ }
+public bool SendEmail(string from, string to, string body)
 ```
 
 `string` can represent an arbitrary sized sequence of UTF-16 code points.
 
-**There are definitely some strings which are not valid email addresses.** The example above is _stringly typed_.
+**There are definitely some strings which are not valid email addresses.**
+
+The example above is _stringly typed_.
 
 ---
 
@@ -350,7 +371,7 @@ public bool SendEmail(string from, string to, string body) { /* ... */ }
 A solution to the _stringly typed_ problem is to use _tiny types_ (aka single-case discriminated unions).
 
 ```f#
-type EmailAddress = private EmailAddress of string
+type EmailAddress = EmailAddress of string
 ```
 
 This is another instance of a union type introduced earlier, but with just a **single case**.
@@ -360,25 +381,26 @@ This is another instance of a union type introduced earlier, but with just a **s
 ```f#
 module EmailAddress =
     let tryParse (email : string) =
-        // Yes, I know this is wrong
+        // Yes, this is quite weak!
         if Regex.IsMatch(email, @"[a-z]+@[a-z]+.[a-z]+") then
             Some (EmailAddress email)
         else
             None
 ```
 
-The `private` in the tiny type definition is optional. However, it gives us a **guarantee** that any `EmailAddress` we see in our code has been validated, as there is just a single public constructor (`EmailAddress.tryParse`).
-
 ---
 
 # Single-case discriminated unions
 
 ```f#
-type EmailAddress = private EmailAddress of string
+type EmailAddress = EmailAddress of string
 ```
+
+<hr>
 
 ```f#
 let myEmail = EmailAddress.tryParse "saul.rennison@gresearch.co.uk"
+
 match myEmail with
 | None -> printfn "Could not parse"
 | Some email ->
@@ -401,12 +423,17 @@ The only methods/functions available for `EmailAddress` are ones we write.
 # Single-case discriminated unions
 
 ```f#
-type EmailAddress = private EmailAddress of string
+// In EmailAddress.fsi
+type EmailAddress
 ```
 
-Forces you to put your domain logic in one place:
+<hr>
+
+Hiding the implementation of the type forces you to put your domain logic in the same place:
 
 ```f#
+type EmailAddress = EmailAddress of string
+
 module EmailAddress =
     let tryParse (email : string) = // ...
     let localPart (EmailAddress email) =
@@ -414,7 +441,33 @@ module EmailAddress =
 ```
 
 .important[
-    - Value is validated at construction.
+The only way to construct or act on an `EmailAddress` is via the functions on its module.
+
+It is an **opaque type**.
+]
+
+---
+
+# Single-case discriminated unions
+
+```f#
+// In EmailAddress.fsi
+type EmailAddress
+```
+
+<hr>
+
+In some other file:
+
+```f#
+let isGmailAddress (email : EmailAddress) =
+    match email with
+    | EmailAddress underlyingString -> // error FS0039
+        underlyingString.EndsWith "@gmail.com"
+```
+
+.error[
+`error FS0039: The pattern discriminator 'EmailAddress' is not defined.`
 ]
 
 --
@@ -426,12 +479,351 @@ TomD did a great talk on domain modelling last Thursday.
 # Single-case discriminated unions
 
 ```c#
-public bool SendEmail(string from, string to, string body) { /* ... */ }
+public bool SendEmail(string from, string to, string body)
 ```
 
 Can now be re-written as:
 
 ```f#
-let sendEmail (from: EmailAddress) (to: EmailAddress) (body: string) : bool
+let sendEmail
+    (from: EmailAddress)
+    (to: EmailAddress)
+    (body: string)
+    : bool
 ```
 
+This is more **strongly typed**.
+
+It is impossible for us to pass an invalid email address to `sendEmail`.
+
+---
+
+# Single-case discriminated unions
+
+Key takeaways:
+
+☑️ Use the type system to represent different types of values
+
+☑️ No implicit conversions
+
+☑️ Opaque types allow us to hide the underlying value (e.g a string)
+
+---
+
+template: agenda
+class: agenda, agenda-3
+
+---
+
+class: bold
+
+# Why GADTs?
+
+## We want to make invalid expressions _compile-time failures_.
+
+Typically used to represent domain-specific languages (DSLs).
+
+---
+
+# Simple DSL
+
+Imagine a basic arithmetic language which can represent:
+
+- Addition
+- Integer constants
+- Comparing to zero
+- If expressions
+
+---
+
+# Basic Example
+
+```f#
+type Expr =
+    | Const of int
+    | Add of Expr * Expr
+    | IsZero of Expr
+    | If of Expr * Expr * Expr
+```
+
+--
+
+☑️ Allows us to express:
+
+```f#
+let valid = Add (Const 1) (Const 1)
+```
+
+--
+
+❌ Also allows:
+
+```f#
+let invalid1 = Add (IsZero (Const 1)) (Const 1)
+let invalid2 = If (Const 1) (Const 2) (Const 3)
+let invalid3 = If (Const 1) (IsZero (Const 2)) (Const 3)
+```
+
+These don't make any sense! 👎
+
+---
+
+# What we're missing
+
+We couldn't differentiate between expressions of different types.
+
+--
+
+Can generics help us?
+
+```f#
+type Expr<'T> =
+    | Const of int
+    | Add of Expr<int> * Expr<int>
+    | IsZero of Expr<int>
+    | If of Expr<bool> * Expr<'T> * Expr<'T>
+```
+
+--
+
+❌ But we can still do:
+
+```f#
+let bad : Expr<bool> = Const 1
+```
+
+`Const 1` is an integer expression, not a `bool`! 👎
+
+---
+
+# The problem with generics
+
+Each discriminated union constructor is essentially a function:
+
+```f#
+val Const : int -> Expr<'T>
+val Add : Expr<int> -> Expr<int> -> Expr<'T>
+val IsZero : Expr<int> -> Expr<'T>
+val If : Expr<bool> -> Expr<'T> -> Expr<'T> -> Expr<'T>
+```
+
+Only the `If` constructor has the return type we want.
+
+---
+
+# In an ideal world
+
+```f#
+type Expr<'T> =
+    | Const of int when 'T: int
+    | Add of Expr<int> * Expr<int> when 'T: int
+    | IsZero of Expr<int> when 'T: bool
+    | If of Expr<bool> * Expr<'T> * Expr<'T>
+```
+
+--
+
+.important[
+We can't represent this in .NET
+]
+
+---
+
+class: center, middle
+
+![](./sad-panda.jpg)
+
+---
+
+# The workaround
+
+In the ideal world, we used equations to constrain `'T` to a particular type.
+
+To encode this in F#, we need a _type equality_ (called a _Teq_ for short).
+
+--
+
+<hr>
+
+`Teq<'T,'U>` has the following properties:
+
+- Can only construct `Teq<'T,'U>` if `'T` and `'U` are the same type
+
+- When we have a `Teq<'T,'U>`, we can treat `'T` as `'U` and vice versa.
+
+Acts as evidence that `'T` is equal to `int` (for example).
+
+---
+
+# Teq module
+
+```f#
+type Teq<'T, 'U> // Opaque type
+
+module Teq =
+    val refl<'T> : Teq<'T,'T>
+    val cast<'T,'U> : Teq<'T,'U> -> 'T -> 'U
+```
+
+We have used an **opaque type** again to expose only our constructor.
+
+We can only instantiate a `Teq<'T, 'U>` through `Teq.refl`.
+
+The type signature of `Teq.refl` ensures that `'T` is the same as `'U`
+
+--
+
+<hr>
+
+`Teq.cast` allows us to cast a `'T` to a `'U`.
+
+This allows us to treat `'T` as `'U` and vice versa.
+
+---
+
+class: middle, center
+
+![](what.jpg)
+
+---
+
+# Using Teqs to achieve type safety
+
+```f#
+type Expr<'T> =
+    | Const of Teq<int, 'T> * int
+    | Add of Teq<int, 'T> * Expr<int> * Expr<int>
+    | IsZero of Teq<bool, 'T> * Expr<int>
+    | If of Expr<bool> * Expr<'T> * Expr<'T>
+```
+
+--
+
+Let's try our previous example again:
+
+```f#
+let bad : Expr<bool> = Const (Teq.refl, 1)
+```
+
+--
+
+`Teq.refl` would have to return `Teq<int, bool>`. **This won't compile!** 🎉
+
+---
+
+# Using Teqs
+
+Let's write an interpreter for `Expr`:
+
+```f#
+let rec eval<'T> (e: Expr<'T>) : 'T =
+    match e with
+    | Const (teq, value) ->
+        value // Error!
+```
+
+The error here is because `value` is `int`, but our return type is `'T`.
+
+How can we tell the compiler that we _know_ `'T` and `int` are the same type?
+
+--
+
+<hr>
+
+Remember our Teq! We have `teq` of type `Teq<int, 'T>`.
+
+We can use `Teq.cast teq value` to cast `value` to `'T`.
+
+The compiler is now 😃. Completely type safe!
+
+---
+
+# The whole hog
+
+```f#
+let rec eval<'T> (e: Expr<'T>) : 'T =
+    match e with
+    | Const (teq, value) ->
+        Teq.cast teq value
+
+    | Add (teq, left, right) ->
+        let result = eval left + eval right
+        Teq.cast teq result
+
+    | IsZero (teq, expr) ->
+        let result = eval expr = 0
+        Teq.cast teq result
+
+    | If (condition, thenExpr, elseExpr) ->
+        if eval condition then 
+            eval thenExpr
+        else
+            eval elseExpr
+```
+
+---
+
+# Implementing Teq
+
+So I haven't mentioned how this whimsical `Teq` is implemented.
+
+It's a lot simpler than you'd imagine!
+
+--
+
+TODO: why we have 'a->'b
+
+```f#
+type Teq<'T, 'U> = Refl of ('T -> 'U) * ('U -> 'T)
+```
+
+--
+
+```
+module Teq =
+    let refl<'T> : Teq<'T,'T> = Refl (id, id)
+
+    let cast<'T,'U>
+        (Refl (tToU, uToT) : Teq<'T, 'U>)
+        (value : 'T)
+        : 'U =
+        tToU value
+```
+
+---
+
+# GADTs
+
+.important[
+This isn't just an academic exercise - we use Teq often.
+
+See Simon's talk tomorrow for real world examples.
+]
+
+Key takeaways:
+
+☑️ 
+
+☑️ 
+
+☑️ 
+
+---
+
+template: agenda
+class: agenda, agenda-4
+
+---
+
+template: agenda
+class: agenda, agenda-6
+
+---
+
+# References
+
+- **DogeConf 2018: Domain Modelling** - _Tom Davies_<br>
+    Video should be available soon
+
+- **Type-safe domain-specific lanagues in F#** - _Remco Bras_<br>
+    Coming to the GR blog soon

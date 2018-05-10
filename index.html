@@ -4,8 +4,10 @@
 <head>
   <title>Stronger Type Safety with F#</title>
   <meta charset="utf-8">
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.12/css/regular.css" integrity="sha384-RGDxJbFQcd3/Rei8rYb+3xO3YREd0abxm8WfLkYj7j4HHo5ZVuNUGVx8H8GbpFTQ" crossorigin="anonymous">
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.12/css/fontawesome.css" integrity="sha384-rnr8fdrJ6oj4zli02To2U/e6t1qG8dvJ8yNZZPsKHcU7wFK3MGilejY5R/cUc5kf" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.12/css/regular.css" integrity="sha384-RGDxJbFQcd3/Rei8rYb+3xO3YREd0abxm8WfLkYj7j4HHo5ZVuNUGVx8H8GbpFTQ"
+    crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.12/css/fontawesome.css" integrity="sha384-rnr8fdrJ6oj4zli02To2U/e6t1qG8dvJ8yNZZPsKHcU7wFK3MGilejY5R/cUc5kf"
+    crossorigin="anonymous">
   <style>
     @import url(https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700,700i|Source+Code+Pro:400,400i,700,700i|Yantramanav:300);
 
@@ -25,8 +27,20 @@
       font-family: 'Source Code Pro';
     }
 
+    blockquote {
+      position: relative;
+    }
+
+    blockquote::before {
+      position: absolute;
+      left: -1.5rem;
+      top: -0.8rem;
+      content: '\201C';
+      font-size: 2em;
+    }
+
     .bold {
-      background-color: #06a7e2; /*#16a085;*/
+      background-color: #06a7e2;
       color: white;
       text-align: center;
       vertical-align: middle;
@@ -58,7 +72,7 @@
     .important::before {
       position: absolute;
       background-color: #ffe066;
-      border-radius: 5px 0 0 5px;
+      border-radius: 10px 0 0 10px;
       left: 0;
       top: 0;
       bottom: 0;
@@ -71,19 +85,38 @@
     .important {
       position: relative;
       background-color: #fff9db;
-      border-radius: 5px;
+      border-radius: 10px;
       padding: 1rem 1rem 1rem 4.3rem;
     }
 
-    .remark-slide-content > div > :first-child { margin-top: 0; }
-    .remark-slide-content > div > :last-child { margin-bottom: 0; }
+    .remark-slide-content>div { margin: 1em 0; }
+    .remark-slide-content>div> :first-child { margin-top: 0; }
+    .remark-slide-content>div> :last-child { margin-bottom: 0; }
 
     li {
       padding: 0.5em 0;
     }
 
-    li > :first-child { margin-top: 0; }
-    li > :last-child { margin-bottom: 0; }
+    li> :first-child { margin-top: 0; }
+    li> :last-child { margin-bottom: 0; }
+
+    .agenda li { opacity: 0.3; }
+    .agenda-1 li:nth-child(1) { opacity: 1; }
+    .agenda-2 li:nth-child(2) { opacity: 1; }
+    .agenda-3 li:nth-child(3) { opacity: 1; }
+    .agenda-4 li:nth-child(4) { opacity: 1; }
+    .agenda-5 li:nth-child(5) { opacity: 1; }
+    .agenda-6 li:nth-child(6) { opacity: 1; }
+
+    .right-image {
+      float: right;
+      margin: 0 0 0 2em!important;
+      width: 33%;
+    }
+
+    .right-image img {
+      width: 100%;
+    }
   </style>
 </head>
 
