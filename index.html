@@ -12,31 +12,26 @@
     @import url(https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700,700i|Source+Code+Pro:400,400i,700,700i|Yantramanav:300);
 
     body {
-      font-family: 'Open Sans';
+      font-family: 'Open Sans', sans-serif;
     }
 
     h1,
     h2,
     h3 {
-      font-family: 'Yantramanav';
+      font-family: 'Yantramanav', sans-serif;
       font-weight: lighter;
     }
 
+    pre,
+    code,
     .remark-code,
     .remark-inline-code {
-      font-family: 'Source Code Pro';
+      font-family: 'Source Code Pro', monospace;
     }
 
-    blockquote {
-      position: relative;
-    }
-
-    blockquote::before {
-      position: absolute;
-      left: -1.5rem;
-      top: -0.8rem;
-      content: '\201C';
-      font-size: 2em;
+    .remark-code {
+      display: block;
+      padding: 0.5em;
     }
 
     .bold {
@@ -117,6 +112,15 @@
     .right-image img {
       width: 100%;
     }
+
+    pre + pre {
+      margin-top: -1em;
+    }
+
+    pre + pre > code {
+      padding-top: 0!important;
+      margin-top: -1.5em;
+    }
   </style>
 </head>
 
@@ -127,8 +131,7 @@
     var slideshow = remark.create({
       sourceUrl: './slides.md',
       countIncrementalSlides: false,
-      highlightLanguage: 'f#',
-      highlightStyle: 'vs'
+      highlightStyle: 'atom-one-light'
     });
   </script>
 </body>

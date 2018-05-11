@@ -12,16 +12,16 @@ name: agenda
 # Agenda
 
 1. Introduction
-1. Type safety in F#
+1. Nullability
+1. Tiny Types
 1. Generalised ADTs
-1. Existential types
-1. Annulus of power
-1. References
+1. Existential Types
+1. Further Reading/Viewing
 
 ???
 
 - don't sound like a zealot!
-- the things f# gives us to help with type saftey
+- the things f# gives us to help with type safety
     - no nulls, options
     - single-case DUs / tiny-types
     - DU - can be done in OO but here is v easy (first class visitor pattern)
@@ -29,7 +29,7 @@ name: agenda
     - GADTs - see Remco's noddy example - parser
     - existentials - from first principles
     - HLists
-    - 'anulus of power'
+    - 'annulus of power'
         - input: unsafe - command args &c
         - inner: super-safe bit
         - need power to bridge this gap - existentials &c
@@ -41,7 +41,7 @@ class: agenda, agenda-1
 
 ---
 
-# Hello!
+# Introduction
 
 ☑️ Hi, I'm Saul
 
@@ -59,23 +59,30 @@ class: agenda, agenda-1
 
 ❌ Here to be a zealot
 
-❌ Speaking from an ivory tower
-
 ---
 
 # Introduction
 
-Whirlwind tour of how F# enables stronger type safety compared to other languages.
+Whirlwind tour of how F# enables stronger type safety.
 
-Some of the concepts have been talked about more thoroughly already.
+Gentle introduction for those who are unfamiliar with F#.
 
-Others have only been touched upon and I'll expand on.
+Leading onto some really neat concepts that we use every day.
 
 .important[
     Key takeaways will be starred and highlighted like this.
 ]
 
-**Let's go!**
+--
+
+<hr>
+
+**Feel free to ask questions as we go!**
+
+️️☑️ Ask questions if you're confused - you won't be the only one!
+
+❌ Save pedantic comments for the end
+
 
 ---
 
@@ -102,7 +109,7 @@ class: middle, center
 ![](./tony-hoare.jpg)
 ]
 
-> I call it my billion-dollar mistake. It was the invention of the null reference in 1965.
+> "I call it my billion-dollar mistake. It was the invention of the null reference in 1965.
 
 --
 
@@ -110,7 +117,7 @@ class: middle, center
 
 --
 
-> But I couldn't resist the temptation to put in a null reference, simply because it was so easy to implement.
+> But I couldn't resist the temptation to put in a null reference, simply because it was so easy to implement."
 >
 > -- <cite>Tony Hoare<cite>
 
@@ -160,7 +167,7 @@ template: nulls-in-fsharp
 The above is similar to this C# (and essentially compiles down to):
 
 ```c#
-public class MyLittleType { // Equatable, Comparable, etc.
+public class MyLittleType { // IEquatable, IComparable, etc.
     public MyLittleType(string foo, int bar) {
         this.Foo = foo;
         this.Bar = bar;
@@ -168,6 +175,8 @@ public class MyLittleType { // Equatable, Comparable, etc.
 
     public readonly string Foo { get; }
     public readonly int Bar { get; }
+
+    // GetHashCode, ToString, Equals, etc.
 }
 ```
 
@@ -183,7 +192,9 @@ let baz = { Foo = "Hello world"; Bar = 5 }
 
 .success[OK!]
 
---
+---
+
+template: nulls-in-fsharp
 
 <hr>
 
@@ -194,7 +205,11 @@ let baz : MyLittleType = null
 --
 
 .error[
-    `error FS0043: The type 'MyLittleType' does not have 'null' as a proper value`
+`error FS0043: The type 'MyLittleType' does not have 'null' as a proper value`
+]
+
+.important[
+`null` is not a proper value for F# types (not just records)
 ]
 
 ---
@@ -213,27 +228,9 @@ class: bold
 
 ---
 
-# Discriminated union types
+name: discriminated-unions
 
-aka _tagged unions_ / _sum_ types.
-
-```f#
-type Option<'T> =
-    | None
-    | Some of value: 'T
-```
-
-`Option<'T>` is part of the F# core library and represents a missing value, or a value.
-
-.important[
-Seeing `null` anywhere in F# is a huge code smell. 💩
-]
-
----
-
-# Discriminated union types
-
-aka _tagged unions_ / _sum_ types.
+# Discriminated unions
 
 ```f#
 type Option<'T> =
@@ -241,9 +238,25 @@ type Option<'T> =
     | Some of value: 'T     // case with a single generic parameter
 ```
 
+--
+
+(also known as _tagged unions_.)
+
+<hr>
+
+`Option<'T>` is part of the F# core library and represents a missing value, or a value.
+
+--
+
+.important[
+Use an option instead of null to represent "no value".
+]
+
 ---
 
-# Using discriminated unions
+template: discriminated-unions
+
+<hr>
 
 ```f#
 let nothing = None  // This can satisfy any 'T in Option<'T>
@@ -252,16 +265,21 @@ val nothing : Option<'T>
 let instance = Some { Foo = "Hello world"; Bar = 5 }
 val instance : Option<MyLittleType>
 ```
---
+
+---
+
+template: discriminated-unions
+
 <hr>
 
-Pulling values out of cases:
-
 ```f#
+let instance = Some { Foo = "Hello world"; Bar = 5 }
+
 match instance with
 | None ->
     printfn "There is nothing here 😢"
-| Some underlyingValue -> // Pattern is `Some underlyingValue`
+
+| Some underlyingValue ->
     printfn "Foo is '%s'" underlyingValue.Foo
     // ==> Foo is 'Hello world'
 ```
@@ -284,11 +302,11 @@ let checkForEmpty (foo : Option<MyLittleType>) =
 --
 
 .error[
-    `error FS0025: Incomplete pattern matches on this expression. For example, the value 'Some (_)' may indicate a case not covered by the pattern(s).`
+    `error FS0025: Incomplete pattern matches on this expression. For example, the value 'None' may indicate a case not covered by the pattern(s).`
 ]
 
 .important[
-Every case must be handled.
+Pattern matching must handle every possible case.
 ]
 
 ---
@@ -297,15 +315,15 @@ class: bold
 
 # We've hit Tony Hoare's goal! 🎉
 
-> My goal was to ensure that all use of references should be absolutely safe, with **checking performed automatically by the compiler**.
+> "My goal was to ensure that all use of references should be absolutely safe, with **checking performed automatically by the compiler**."
 
 ---
 
 # Aside
 
-Cheekily, `None` compiles down to `null` in the IL.
+`None` compiles down to `null` in the IL.
 
-This is a performance optimisation under-the-hood.
+This is a performance optimisation under the hood.
 
 This is fine because the **dev never has to care about nulls** - the compiler takes care of that for us.
 
@@ -317,13 +335,7 @@ This is fine because the **dev never has to care about nulls** - the compiler ta
 
 ---
 
-# Discriminated unions in C#&nbsp;
-
-TODO: It's possible to model F# DU types in C# as a _visitor pattern_.
-
----
-
-# Coming to C# 8.x
+# Coming to C# 8.0
 
 C# is moving towards 'non-nullable by default' in C# 8.0:
 
@@ -340,7 +352,7 @@ class Person
 
 # Coming to C# 8.x
 
-Also implementing records:
+Also implementing records in C# 8.x:
 
 ```c#
 class Person(string First, string Last);
@@ -385,13 +397,38 @@ var someResult =
 
 ---
 
-# (Mis-)using built-in types
+# Nullability
+
+Key takeaways:
+
+.important[
+`null` is not a proper value for F# types (not just records)
+]
+
+.important[
+Use an option instead of null to represent "no value".
+]
+
+.important[
+Pattern matching must handle every possible case.
+]
+
+---
+
+template: agenda
+class: agenda, agenda-3
+
+---
+
+# (Mis)using built-in types
 
 Built-in types, like ints and strings, are often used to represent values that must fit some constraints.
 
 These constraints are not apparent from the type system.
 
---
+---
+
+# (Mis)using built-in types
 
 For example:
 
@@ -399,11 +436,19 @@ For example:
 public bool SendEmail(string from, string to, string body)
 ```
 
+--
+
 `string` can represent an arbitrary sized sequence of UTF-16 code points.
 
 **There are definitely some strings which are not valid email addresses.**
 
+--
+
 The example above is _stringly typed_.
+
+.important[
+Use the type system to represent different types of values
+]
 
 ---
 
@@ -415,7 +460,7 @@ A solution to the _stringly typed_ problem is to use _tiny types_ (aka single-ca
 type EmailAddress = EmailAddress of string
 ```
 
-This is another instance of a union type introduced earlier, but with just a **single case**.
+This is another instance of a _discriminated union_ introduced earlier, but with just a **single case**.
 
 --
 
@@ -455,7 +500,11 @@ match myEmail with
     `error FS0039: The field, constructor or member 'Split' is not defined.`
 ]
 
-We can't implicitly access the underlying string.
+--
+
+.important[
+There are no implicit conversions. We can't implicitly access the underlying string.
+]
 
 The only methods/functions available for `EmailAddress` are ones we write.
 
@@ -543,30 +592,34 @@ It is impossible for us to pass an invalid email address to `sendEmail`.
 
 Key takeaways:
 
-☑️ Use the type system to represent different types of values
+.important[
+Use the type system to represent different types of values
+]
 
-☑️ No implicit conversions
+.important[
+No implicit conversions
+]
 
-☑️ Opaque types allow us to hide the underlying value (e.g a string)
+.important[
+Opaque types allow us to hide the underlying value (e.g a string)
+]
 
 ---
 
 template: agenda
-class: agenda, agenda-3
+class: agenda, agenda-4
 
 ---
-
-class: bold
 
 # Why GADTs?
 
-## We want to make invalid expressions _compile-time failures_.
+Typically used to represent _domain-specific languages_ (DSLs).
 
-Typically used to represent domain-specific languages (DSLs).
+We want to make invalid expressions _compile-time failures_.
 
----
+--
 
-# Simple DSL
+<hr>
 
 Imagine a basic arithmetic language which can represent:
 
@@ -639,7 +692,7 @@ let bad : Expr<bool> = Const 1
 
 # The problem with generics
 
-Each discriminated union constructor is essentially a function:
+Each case constructor is essentially a function:
 
 ```f#
 val Const : int -> Expr<'T>
@@ -688,11 +741,13 @@ To encode this in F#, we need a _type equality_ (called a _Teq_ for short).
 
 `Teq<'T,'U>` has the following properties:
 
-- Can only construct `Teq<'T,'U>` if `'T` and `'U` are the same type
+1. Can only construct `Teq<'T,'U>` if `'T` and `'U` are the same type
 
-- When we have a `Teq<'T,'U>`, we can treat `'T` as `'U` and vice versa.
+2. When we have a `Teq<'T,'U>`, we can treat `'T` as `'U` and vice versa.
 
-Acts as evidence that `'T` is equal to `int` (for example).
+.important[
+Teq acts as evidence that two types are equal.
+]
 
 ---
 
@@ -708,7 +763,12 @@ module Teq =
 
 We have used an **opaque type** again to expose only our constructor.
 
-We can only instantiate a `Teq<'T, 'U>` through `Teq.refl`.
+--
+
+<hr>
+
+We can only instantiate a `Teq<'T, 'U>` through `Teq.refl`.<br>
+(refl is short for reflexive)
 
 The type signature of `Teq.refl` ensures that `'T` is the same as `'U`
 
@@ -748,7 +808,17 @@ let bad : Expr<bool> = Const (Teq.refl, 1)
 
 --
 
-`Teq.refl` would have to return `Teq<int, bool>`. **This won't compile!** 🎉
+☑️ This won't compile!
+
+.error[
+<pre>
+error FS0001: Type mismatch. Expecting a
+    'Teq&lt;int,bool&gt;'
+but given a
+    'Teq&lt;int,int&gt;'
+The type 'bool' does not match the type 'int'
+</pre>
+]
 
 ---
 
@@ -786,15 +856,21 @@ let rec eval<'T> (e: Expr<'T>) : 'T =
     match e with
     | Const (teq, value) ->
         Teq.cast teq value
-
+```
+--
+```f#
     | Add (teq, left, right) ->
         let result = eval left + eval right
         Teq.cast teq result
-
+```
+--
+```f#
     | IsZero (teq, expr) ->
         let result = eval expr = 0
         Teq.cast teq result
-
+```
+--
+```f#
     | If (condition, thenExpr, elseExpr) ->
         if eval condition then 
             eval thenExpr
@@ -806,9 +882,9 @@ let rec eval<'T> (e: Expr<'T>) : 'T =
 
 # Implementing Teq
 
-So I haven't mentioned how this whimsical `Teq` is implemented.
+So I haven't mentioned how this magical `Teq` is implemented.
 
-It's a lot simpler than you'd imagine!
+It's not as complex as you're imagining 🙏
 
 --
 
@@ -835,24 +911,237 @@ module Teq =
 
 # GADTs
 
-.important[
-This isn't just an academic exercise - we use Teq often.
-
-See Simon's talk tomorrow for real world examples.
-]
-
 Key takeaways:
 
-☑️ 
+.important[
+Use Teqs for type safe GADTs (this is their only use case)
+]
 
-☑️ 
+.important[
+Teq acts as evidence that two types are equal.
+]
 
-☑️ 
+See Simon's talk tomorrow for real world examples.
 
 ---
 
 template: agenda
-class: agenda, agenda-4
+class: agenda, agenda-5
+
+---
+
+# Example: writing a parser
+
+```
+parseList
+    "[ 1 ; 2 ; 3 ]"
+```
+--
+```
+        = [ 1 ; 2 ; 3 ]
+```
+--
+```
+
+parseList
+    "[ true ; false ]"
+```
+--
+```
+        = [ true ; false ]
+```
+
+---
+
+# Example: writing a parser
+
+```f#
+parseList "[ 1 ; 2 ; 3 ]" = [ 1 ; 2 ; 3 ]
+parseList "[ true ; false ]" = [ true ; false ]
+
+val parseList : string -> ?
+```
+--
+```f#
+val parseList : string -> obj 😭
+```
+--
+```f#
+val parseList : string -> List<obj> 😠
+```
+--
+```f#
+val parseList : string -> ∃ 'a . List<'a> 🤪
+```
+
+---
+
+# Universal Quantification
+
+```f#
+Ɐ 'a . (List<'a> -> int)
+```
+--
+```f#
+
+
+module List =
+
+    val length : List<'a> -> int
+```
+
+---
+
+# Universal Quantification vs. Generics
+
+```f#
+let sumLengths
+    (xs : List<int>)
+    (ys : List<string>)
+    (getLength : ??)
+    : int =
+
+    getLength xs + getLength ys
+```
+
+We want the type of `getLength` to be `List<*> -> int`.
+
+--
+
+Again - this isn't possible in .NET 😱
+
+---
+
+# Polymorphism in .NET
+
+☑️ Generics
+
+❌ First-class universals
+
+---
+
+name: emulating-universal-quantification
+
+# Emulating Universal Quantification
+
+```f#
+type IGetListLength =
+    abstract member Invoke<'a> : List<'a> -> int
+```
+
+--
+
+Equivalent to:
+
+```c#
+interface IGetListLength
+{
+    int Invoke<'a>(List<'a> list);
+}
+```
+
+---
+
+template: emulating-universal-quantification
+
+<hr>
+
+```f#
+
+let sumLengths
+    (xs : List<int>)
+    (ys : List<string>)
+    (getLength : IGetListLength)
+    : int =
+
+    getLength.Invoke xs + getLength.Invoke ys
+```
+
+---
+
+class: bold
+
+# ∃ ⇄ Ɐ
+
+---
+
+# We want to emulate
+
+```
+∃ 'a . List<'a>
+```
+
+---
+
+# Continuation Passing Style
+
+```
+ 'a ≅ Ɐ 'ret . (('a  -> 'ret) -> 'ret)
+```
+--
+```
+int ≅ Ɐ 'ret . ((int -> 'ret) -> 'ret)
+```
+--
+```f#
+type CPSInt = abstract member Eval<'ret> : (int -> 'ret) -> 'ret
+```
+
+---
+
+# Implementing our existential
+
+```
+            'a ≅ Ɐ 'ret . (('a  -> 'ret) -> 'ret)
+```
+--
+```
+
+∃ 'a . 'a list ≅ Ɐ 'ret . ((∃ 'a . ('a list) -> 'ret) -> 'ret)
+```
+--
+```
+               ≅ Ɐ 'ret . ( Ɐ 'a . ('a list  -> 'ret) -> 'ret)
+```
+
+--
+
+```f#
+type ListCrate =
+    abstract member Apply<'ret> : ListCrateEvaluator<'ret> -> 'ret
+
+and ListCrateEvaluator<'ret> =
+    abstract member Eval<'a> : List<'a> -> 'ret
+```
+
+.important[
+TODO: We're hiding a generic type
+]
+
+---
+
+# Using Crates
+
+```f#
+let makeListCrate (list : List<'a>) : ListCrate =
+    { new ListCrate with 
+        member __.Apply e = e.Eval list
+    }
+
+let getLength (list : ListCrate) : int =
+    list.Apply
+        { new ListCrateEvaluator<int> with
+            member __.Eval (list : List<'a>) = List.length list
+        }
+```
+
+---
+
+# Existential Types
+
+Key takeaways:
+
+TODO
 
 ---
 
@@ -861,7 +1150,7 @@ class: agenda, agenda-6
 
 ---
 
-# References
+# Further Reading/Viewing
 
 - **The future of C# | Microsoft Build 2018**<br>
     https://channel9.msdn.com/Events/Build/2018/BRK2155
@@ -869,5 +1158,8 @@ class: agenda, agenda-6
 - **DogeConf 2018: Domain Modelling** - _Tom Davies_<br>
     Video should be available soon
 
-- **Type-safe domain-specific lanagues in F#** - _Remco Bras_<br>
-    Coming to the GR blog soon
+- **Type-safe domain-specific languages in F#** - _Remco Bras_<br>
+    Waiting to be published on the GR blog
+
+- **Existentials: Playing Hide and Seek With Your Types** - _Nicholas Cowle_<br>
+    https://skillsmatter.com/skillscasts/11633-lightning-talk-existentials-playing-hide-and-seek-with-your-types
