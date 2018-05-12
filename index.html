@@ -29,14 +29,41 @@
       font-family: 'Source Code Pro', monospace;
     }
 
+    img {
+      max-width: 100%;
+    }
+
     .remark-code {
       display: block;
       padding: 0.5em;
     }
 
+    .remark-slide-content h1 {
+      font-size: 45px;
+    }
+
+    .remark-slide-content::after {
+      position: absolute;
+      content: ' ';
+      width: 95px;
+      height: 95px;
+      opacity: 0.5;
+      top: 560px;
+      right: 20px;
+      background-image: url("BabyDoge.png");
+      background-size: contain;
+    }
+
     .bold {
-      background-color: #06a7e2;
+      background-color: #16a085;
       color: white;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .title {
+      background-color: #fff2cc;
+      color: #c37c2b;
       text-align: center;
       vertical-align: middle;
     }
@@ -50,8 +77,9 @@
     }
 
     .error {
-      background-color: #c0392b;
-      color: white;
+      border-radius: 8px;
+      color: #c0392b;
+      border: solid 2px;
       padding: 0.5em;
     }
 
@@ -95,6 +123,10 @@
     li> :first-child { margin-top: 0; }
     li> :last-child { margin-bottom: 0; }
 
+    .agenda {
+      font-size: 1.6rem;
+    }
+
     .agenda li { opacity: 0.3; }
     .agenda-1 li:nth-child(1) { opacity: 1; }
     .agenda-2 li:nth-child(2) { opacity: 1; }
@@ -102,24 +134,43 @@
     .agenda-4 li:nth-child(4) { opacity: 1; }
     .agenda-5 li:nth-child(5) { opacity: 1; }
     .agenda-6 li:nth-child(6) { opacity: 1; }
+    .agenda-7 li:nth-child(7) { opacity: 1; }
 
     .right-image {
       float: right;
       margin: 0 0 0 2em!important;
-      width: 33%;
+      width: 40%;
     }
 
     .right-image img {
       width: 100%;
     }
 
-    pre + pre {
-      margin-top: -1em;
+    .merged + .merged > pre {
+      margin-top: -1.45em;
     }
 
-    pre + pre > code {
+    .merged + .merged > pre > .remark-code {
       padding-top: 0!important;
       margin-top: -1.5em;
+    }
+
+    .remark-slide-number {
+      position: inherit;
+    }
+
+    .remark-slide-number .progress-bar-container {
+      position: absolute;
+      bottom: 1px;
+      height: 3px;
+      display: block;
+      left: 0;
+      right: 0;
+    }
+
+    .remark-slide-number .progress-bar {
+      height: 100%;
+      background-color: #c37c2b;
     }
   </style>
 </head>
@@ -131,7 +182,14 @@
     var slideshow = remark.create({
       sourceUrl: './slides.md',
       countIncrementalSlides: false,
-      highlightStyle: 'atom-one-light'
+      //highlightStyle: 'atom-one-light',
+      highlightStyle: 'rainbow',
+      slideNumberFormat: (current, total) => `
+        <div class="progress-bar-container" title="${current} / ${total}">
+          <div class="progress-bar" style="width: ${current/total*100}%">
+          </div>
+        </div>
+      `
     });
   </script>
 </body>

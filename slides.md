@@ -1,4 +1,6 @@
-class: bold
+class: title
+
+![](./logo.png)
 
 Stronger Type Safety in F#
 --------------------------
@@ -8,14 +10,14 @@ Stronger Type Safety in F#
 ---
 
 name: agenda
-
-# Agenda
+class: agenda, middle
 
 1. Introduction
 1. Nullability
 1. Tiny Types
 1. Generalised ADTs
 1. Existential Types
+1. HLists
 1. Further Reading/Viewing
 
 ???
@@ -37,7 +39,7 @@ name: agenda
 ---
 
 template: agenda
-class: agenda, agenda-1
+class: agenda-1
 
 ---
 
@@ -87,7 +89,7 @@ Leading onto some really neat concepts that we use every day.
 ---
 
 template: agenda
-class: agenda, agenda-2
+class: agenda-2
 
 ---
 
@@ -103,7 +105,7 @@ class: middle, center
 
 ---
 
-# 
+class: middle
 
 .right-image[
 ![](./tony-hoare.jpg)
@@ -335,6 +337,18 @@ This is fine because the **dev never has to care about nulls** - the compiler ta
 
 ---
 
+# What `Option` compiles to
+
+We can reproduce that in C#.
+
+But we don't get the most important feature:
+
+--
+
+> Exhaustive pattern matching enforced by the compiler.
+
+---
+
 # Coming to C# 8.0
 
 C# is moving towards 'non-nullable by default' in C# 8.0:
@@ -355,6 +369,7 @@ class Person
 Also implementing records in C# 8.x:
 
 ```c#
+// Syntax TBD, first draft is like this:
 class Person(string First, string Last);
 ```
 
@@ -384,7 +399,9 @@ class Person : IEquatable<Person>
 Also implementing pattern matching _expressions_:
 
 ```c#
-class Person(string First, string Last);
+class Person { /* ... */ };
+class Professor : Person { /* ... */ };
+class Student : Person { /* ... */ };
 
 var someResult =
     person switch
@@ -416,7 +433,7 @@ Pattern matching must handle every possible case.
 ---
 
 template: agenda
-class: agenda, agenda-3
+class: agenda-3
 
 ---
 
@@ -607,11 +624,11 @@ Opaque types allow us to hide the underlying value (e.g a string)
 ---
 
 template: agenda
-class: agenda, agenda-4
+class: agenda-4
 
 ---
 
-# Why GADTs?
+# What the GADT?
 
 Typically used to represent _domain-specific languages_ (DSLs).
 
@@ -680,13 +697,13 @@ type Expr<'T> =
 
 --
 
-❌ But we can still do:
+👎 But we can still do:
 
 ```f#
 let bad : Expr<bool> = Const 1
 ```
 
-`Const 1` is an integer expression, not a `bool`! 👎
+`Const 1` is an `int` expression, it shouldn't work as a `bool`!
 
 ---
 
@@ -718,7 +735,7 @@ type Expr<'T> =
 --
 
 .important[
-We can't represent this in .NET
+This syntax doesn't exist in .NET
 ]
 
 ---
@@ -808,7 +825,7 @@ let bad : Expr<bool> = Const (Teq.refl, 1)
 
 --
 
-☑️ This won't compile!
+🎉️ This won't compile!
 
 .error[
 <pre>
@@ -851,25 +868,32 @@ The compiler is now 😃. Completely type safe!
 
 # The whole hog
 
+.merged[
 ```f#
 let rec eval<'T> (e: Expr<'T>) : 'T =
     match e with
     | Const (teq, value) ->
         Teq.cast teq value
 ```
+]
 --
+.merged[
 ```f#
     | Add (teq, left, right) ->
         let result = eval left + eval right
         Teq.cast teq result
 ```
+]
 --
+.merged[
 ```f#
     | IsZero (teq, expr) ->
         let result = eval expr = 0
         Teq.cast teq result
 ```
+]
 --
+.merged[
 ```f#
     | If (condition, thenExpr, elseExpr) ->
         if eval condition then 
@@ -877,6 +901,7 @@ let rec eval<'T> (e: Expr<'T>) : 'T =
         else
             eval elseExpr
 ```
+]
 
 ---
 
@@ -888,15 +913,13 @@ It's not as complex as you're imagining 🙏
 
 --
 
-TODO: why we have 'a->'b
-
 ```f#
 type Teq<'T, 'U> = Refl of ('T -> 'U) * ('U -> 'T)
 ```
 
 --
 
-```
+```f#
 module Teq =
     let refl<'T> : Teq<'T,'T> = Refl (id, id)
 
@@ -926,53 +949,77 @@ See Simon's talk tomorrow for real world examples.
 ---
 
 template: agenda
-class: agenda, agenda-5
+class: agenda-5
 
 ---
 
 # Example: writing a parser
 
+.merged[
 ```
 parseList
     "[ 1 ; 2 ; 3 ]"
 ```
+]
 --
+.merged[
 ```
         = [ 1 ; 2 ; 3 ]
 ```
+]
 --
+.merged[
 ```
 
 parseList
     "[ true ; false ]"
 ```
+]
 --
+.merged[
 ```
         = [ true ; false ]
 ```
+]
 
 ---
 
 # Example: writing a parser
 
+.merged[
 ```f#
 parseList "[ 1 ; 2 ; 3 ]" = [ 1 ; 2 ; 3 ]
 parseList "[ true ; false ]" = [ true ; false ]
 
 val parseList : string -> ?
 ```
+]
 --
+.merged[
 ```f#
 val parseList : string -> obj 😭
 ```
+]
 --
+.merged[
 ```f#
 val parseList : string -> List<obj> 😠
 ```
+]
 --
+.merged[
 ```f#
 val parseList : string -> ∃ 'a . List<'a> 🤪
 ```
+]
+
+--
+
+"There exists some type `'a`, for which I am a list of `'a`"
+
+.important[
+Existentials allow us to express at the type level that we do not know `'a` statically.
+]
 
 ---
 
@@ -981,10 +1028,10 @@ val parseList : string -> ∃ 'a . List<'a> 🤪
 ```f#
 Ɐ 'a . (List<'a> -> int)
 ```
+
 --
+
 ```f#
-
-
 module List =
 
     val length : List<'a> -> int
@@ -1004,17 +1051,21 @@ let sumLengths
     getLength xs + getLength ys
 ```
 
-We want the type of `getLength` to be `List<*> -> int`.
+We want the type of `getLength` to be `List<anything> -> int`.
 
 --
 
-Again - this isn't possible in .NET 😱
+Again - this isn't possible in .NET 😪
 
 ---
+
+class: bold
 
 # Polymorphism in .NET
 
 ☑️ Generics
+
+--
 
 ❌ First-class universals
 
@@ -1065,11 +1116,11 @@ class: bold
 
 ---
 
-# We want to emulate
+class: bold
 
-```
-∃ 'a . List<'a>
-```
+# We want to emulate:
+
+### `∃ 'a . List<'a>`
 
 ---
 
@@ -1084,27 +1135,103 @@ int ≅ Ɐ 'ret . ((int -> 'ret) -> 'ret)
 ```
 --
 ```f#
-type CPSInt = abstract member Eval<'ret> : (int -> 'ret) -> 'ret
+type ContinuationPassingStyleInt =
+    abstract member Eval<'ret> : (int -> 'ret) -> 'ret
 ```
+
+Equivalent to:
+
+```c#
+interface ContinuationPassingStyleInt
+{
+    T Eval<T>(Func<int, T> f);
+}
+```
+
+???
+
+We can represent a type as a universally quantified function which takes in something that acts on the type and returns you the value.
+
+Bit weird.
+
+Let's look at a more concrete example.
+
+The way that I can represent an integer is by a universally quantified function that takes in whatever you want and returns that 'whatever you want' type.
+
+You hand me the function, and I pass in the value that I represent.
+
+So if I'm 5, I call your function with 5 and then hand you back the result you calculated in that function.
+
+So these two ways of representing the type are absolutely equivalent.
+
+So we're going to use this in our definition of an existential.
+
+Because we know how to represent universal quantification in F#, we can actually write that type.
+
+This is everything that we need to represent an existential.
 
 ---
 
 # Implementing our existential
 
 ```
-            'a ≅ Ɐ 'ret . (('a  -> 'ret) -> 'ret)
+             'a ≅ Ɐ 'ret . (('a  -> 'ret) -> 'ret)
 ```
 --
+.merged[
+```
+∃ 'a . List<'a> ≅ Ɐ 'ret . ((∃ 'a . List<'a>  -> 'ret) -> 'ret)
+```
+]
+--
+.merged[
+```
+                ≅ Ɐ 'ret . ( Ɐ 'a . (List<'a> -> 'ret) -> 'ret)
+```
+]
+
+???
+
+Here's our formula for CPS. 
+
+I'm going to substitute in the type we want to emulate. I've replaced 'a on the left and the right with `∃ 'a . List<'a>`.
+
+This next line is interesting and needs a little bit of explanation.
+
+If you have a look inside of this function, what I've got is a function that takes in an existentially quantified list and returns a 'ret.
+
+Have a think about that.
+
+What types of list does that function take?
+
+Given that it's taken an existentially quantified list, which could be any list, we can represent that as a function that works over all lists.
+
+This is the duality of universal and existential quantification.
+
+What we've done here is pull the existential quantifier out of the left-hand side of the function signature and in doing so it becomes a universal quantifier.
+
+And how were we able to get the existential on the left-hand side of a function signature? And that's because we used the CPS.
+
+We're able to use these things together to write our type now as two universally quantified functions.
+
+---
+
+# Implementing our existential
+
+```
+             'a ≅ Ɐ 'ret . (('a  -> 'ret) -> 'ret)
 ```
 
-∃ 'a . 'a list ≅ Ɐ 'ret . ((∃ 'a . ('a list) -> 'ret) -> 'ret)
+.merged[
 ```
---
+∃ 'a . List<'a> ≅ Ɐ 'ret . ((∃ 'a . List<'a>  -> 'ret) -> 'ret)
 ```
-               ≅ Ɐ 'ret . ( Ɐ 'a . ('a list  -> 'ret) -> 'ret)
-```
+]
 
---
+<div class="merged">
+<pre><div class="remark-code"><div class="remark-code-line">                ≅ Ɐ 'ret . (<span style="background: #1abc9c"> Ɐ 'a . (<span style="background: #e74c3c">List<'a> -> 'ret</span>) -> 'ret</span>)
+</div></div><pre>
+</div>
 
 ```f#
 type ListCrate =
@@ -1113,10 +1240,6 @@ type ListCrate =
 and ListCrateEvaluator<'ret> =
     abstract member Eval<'a> : List<'a> -> 'ret
 ```
-
-.important[
-TODO: We're hiding a generic type
-]
 
 ---
 
@@ -1127,12 +1250,56 @@ let makeListCrate (list : List<'a>) : ListCrate =
     { new ListCrate with 
         member __.Apply e = e.Eval list
     }
+```
 
-let getLength (list : ListCrate) : int =
-    list.Apply
+--
+
+.important[
+We're hiding the generic type. The return value is not generic.
+]
+
+--
+
+Equivalent to:
+
+```c#
+class AutoGeneratedNameHere<T> : ListCrate {
+    private List<T> _list;
+    public AutoGeneratedNameHere(List<T> list) { _list = list; }
+
+    public override U Apply<U>(ListCrateEvaluator<U> e) {
+        return e.Eval(_list);
+    }
+}
+```
+
+---
+
+# Using Crates
+
+```f#
+let getLength (listCrate : ListCrate) : int =
+    listCrate.Apply
         { new ListCrateEvaluator<int> with
             member __.Eval (list : List<'a>) = List.length list
         }
+```
+
+.important[
+In our evaluator, we are in a strongly typed context.
+]
+
+--
+
+Equivalent to:
+
+```c#
+class AutoGeneratedNameHere : ListCrateEvaluator<int> {
+    public AutoGeneratedNameHere() {};
+    public override int Eval<T>(List<T> list) {
+        return List.length(list);
+    }
+}
 ```
 
 ---
@@ -1141,12 +1308,228 @@ let getLength (list : ListCrate) : int =
 
 Key takeaways:
 
-TODO
+.important[
+Existentials allow us to express at the type level that we do not know `'a` statically.
+]
+
+.important[
+Crates hide the generic type.
+]
+
+.important[
+In our evaluator, we are in a strongly typed context.
+]
 
 ---
 
 template: agenda
-class: agenda, agenda-6
+class: agenda-6
+
+---
+
+# HLists
+
+Imagine a standard list:
+
+```f#
+let standardList = [1; 2; 3; 4]
+```
+
+--
+
+Contrast this with a HList - _heterogenous_ list.
+
+```f#
+let myHList = [1234; true; "Hello"]
+```
+
+(This is not valid F#!)
+
+--
+
+<hr>
+
+.merged[
+```f#
+val myHList : obj 😭
+```
+]
+--
+.merged[
+```f#
+val myHList : List<obj> 😠
+```
+]
+--
+.merged[
+```f#
+val myHList : HList<int * (bool * (string * unit))> 🤪
+```
+]
+--
+.merged[
+```f#
+val myHList : HList<int -> bool -> string -> unit> 😅
+```
+]
+
+???
+
+Nick's HList example: https://pastebin.com/a4BJrA64
+
+---
+
+# HLists
+
+The types of the elements are represented in the type of the HList.
+
+```f#
+let myList =
+    HList.empty
+    |> HList.cons "Hello"
+    |> HList.cons true
+    |> HList.cons 1234
+
+val myList : HList<int -> bool -> string -> unit>
+```
+
+--
+
+We use functions as they are syntactically _convenient_.
+
+They are syntactic sugar for:
+
+```f#
+val myList :
+    HList<
+        FSharpFunc<int,
+            FSharpFunc<bool,
+                FSharpFunc<string, unit>>>>
+```
+
+---
+
+# What is `HList`?
+
+.merged[
+```f#
+type HList<'a> =
+    | Empty of Teq<'a, unit>
+    | Cons of 'a HListConsBinder
+```
+]
+--
+.merged[
+```f#
+
+and HListConsBinder<'hlist> =
+    abstract member Apply : HListConsEvaluator<'hlist,'ret> -> 'ret
+
+and HListConsEvaluator<'hlist, 'ret> =
+    abstract member Eval : 'element
+                        -> 'rest HList
+                        -> Teq<'hlist, 'element -> 'rest>
+                        -> 'ret
+```
+]
+
+---
+
+# Constructing a HList
+
+.merged[
+```f#
+module HList =
+
+    let empty = Empty Teq.refl
+```
+]
+--
+.merged[
+```f#
+
+    let cons (element : 'element) (list : HList<'rest>) =
+        Cons { new HListConsBinder<'element -> 'rest> with
+            member __.Apply e =
+                e.Eval element list Teq.refl<'element -> 'rest>
+        }
+```
+]
+
+---
+
+# Deconstructing a HList
+
+.merged[
+```f#
+module HList =
+
+    let head<'element, 'rest> (list : HList<'element -> 'rest)) =
+        match list with
+        | Empty teq -> failwith "Impossible"
+```
+]
+--
+.merged[
+```f#
+        | Cons binder ->
+            binder.Apply { new HListConsEvaluator<_,_> with
+                member __.Eval element rest teq =
+                    let teq = teq |> Teq.domain
+                    element |> Teq.cast teq
+            }
+```
+]
+
+---
+
+# Deconstructing a HList
+
+.merged[
+```f#
+module HList =
+
+    let tail (list : ('element -> 'rest) HList) : HList<'rest> =
+        match list with
+        | Empty teq -> failwith "Impossible"
+```
+]
+--
+.merged[
+```f#
+        | Cons binder ->
+            binder.Apply
+                { new HListConsEvaluator<_,_> with
+                    member __.Eval element rest teq =
+                        let teq = teq |> Teq.range |> congHList
+                        xs |> Teq.castTo teq
+                }
+```
+]
+
+---
+
+# Working with HLists
+
+.merged[
+```f#
+module HList =
+
+    let rec length (list : HList<'a>) : int =
+        match list with
+        | Empty teq -> 0
+        | Cons binder ->
+            binder.Apply { new HListConsEvaluator<_,_> with
+                member __.Eval element rest teq =
+                    1 + length rest
+            }
+```
+]
+
+---
+
+template: agenda
+class: agenda-7
 
 ---
 
@@ -1163,3 +1546,6 @@ class: agenda, agenda-6
 
 - **Existentials: Playing Hide and Seek With Your Types** - _Nicholas Cowle_<br>
     https://skillsmatter.com/skillscasts/11633-lightning-talk-existentials-playing-hide-and-seek-with-your-types
+
+- **Complete HList Example** - _Nicholas Cowle_<br>
+    https://pastebin.com/a4BJrA64
