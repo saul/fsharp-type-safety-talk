@@ -172,6 +172,17 @@
       height: 100%;
       background-color: #c37c2b;
     }
+
+    .half-width {
+      width: 50%;
+    }
+
+    .slide-count {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 1rem;
+    }
   </style>
 </head>
 
@@ -185,6 +196,10 @@
       //highlightStyle: 'atom-one-light',
       highlightStyle: 'rainbow',
       slideNumberFormat: (current, total) => `
+        <div class="slide-count">
+          #${current}
+        </div>
+
         <div class="progress-bar-container" title="${current} / ${total}">
           <div class="progress-bar" style="width: ${current/total*100}%">
           </div>

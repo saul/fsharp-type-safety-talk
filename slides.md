@@ -75,16 +75,15 @@ Leading onto some really neat concepts that we use every day.
     Key takeaways will be starred and highlighted like this.
 ]
 
---
+---
 
-<hr>
+class: bold
 
-**Feel free to ask questions as we go!**
+# Ask questions as we go if you're confused 🙋‍
 
-️️☑️ Ask questions if you're confused - you won't be the only one!
+You won't be the only one.
 
-❌ Save pedantic comments for the end
-
+Think of this as a lecture rather than a monologue.
 
 ---
 
@@ -527,7 +526,24 @@ The only methods/functions available for `EmailAddress` are ones we write.
 
 ---
 
-# Single-case discriminated unions
+# Hiding the constructor
+
+There's nothing to stop someone doing this:
+
+```f#
+let userEmail = readInput()
+let myEmail = EmailAddress userEmail
+```
+
+--
+
+👎 This hasn't gone through `tryParse` - what if the input is invalid?
+
+We'll probably find out further down the line - difficult to debug.
+
+---
+
+# Hiding the constructor
 
 ```f#
 // In EmailAddress.fsi
@@ -555,7 +571,7 @@ It is an **opaque type**.
 
 ---
 
-# Single-case discriminated unions
+# Hiding the pattern
 
 ```f#
 // In EmailAddress.fsi
@@ -667,7 +683,7 @@ let valid = Add (Const 1) (Const 1)
 
 --
 
-❌ Also allows:
+👎 Also allows:
 
 ```f#
 let invalid1 = Add (IsZero (Const 1)) (Const 1)
@@ -675,7 +691,7 @@ let invalid2 = If (Const 1) (Const 2) (Const 3)
 let invalid3 = If (Const 1) (IsZero (Const 2)) (Const 3)
 ```
 
-These don't make any sense! 👎
+These don't make any sense!
 
 ---
 
@@ -703,7 +719,7 @@ type Expr<'T> =
 let bad : Expr<bool> = Const 1
 ```
 
-`Const 1` is an `int` expression, it shouldn't work as a `bool`!
+`Const 1` is an `int` expression, not a `bool` expression.
 
 ---
 
@@ -879,6 +895,7 @@ let rec eval<'T> (e: Expr<'T>) : 'T =
 --
 .merged[
 ```f#
+
     | Add (teq, left, right) ->
         let result = eval left + eval right
         Teq.cast teq result
@@ -887,6 +904,7 @@ let rec eval<'T> (e: Expr<'T>) : 'T =
 --
 .merged[
 ```f#
+
     | IsZero (teq, expr) ->
         let result = eval expr = 0
         Teq.cast teq result
@@ -895,6 +913,7 @@ let rec eval<'T> (e: Expr<'T>) : 'T =
 --
 .merged[
 ```f#
+
     | If (condition, thenExpr, elseExpr) ->
         if eval condition then 
             eval thenExpr
@@ -919,9 +938,15 @@ type Teq<'T, 'U> = Refl of ('T -> 'U) * ('U -> 'T)
 
 --
 
+.merged[
 ```f#
 module Teq =
     let refl<'T> : Teq<'T,'T> = Refl (id, id)
+```
+]
+--
+.merged[
+```f#
 
     let cast<'T,'U>
         (Refl (tToU, uToT) : Teq<'T, 'U>)
@@ -929,6 +954,7 @@ module Teq =
         : 'U =
         tToU value
 ```
+]
 
 ---
 
@@ -1051,6 +1077,8 @@ let sumLengths
     getLength xs + getLength ys
 ```
 
+--
+
 We want the type of `getLength` to be `List<anything> -> int`.
 
 --
@@ -1127,11 +1155,11 @@ class: bold
 # Continuation Passing Style
 
 ```
- 'a ≅ Ɐ 'ret . (('a  -> 'ret) -> 'ret)
+             'a ≅ Ɐ 'ret . (('a  -> 'ret) -> 'ret)
 ```
 --
 ```
-int ≅ Ɐ 'ret . ((int -> 'ret) -> 'ret)
+            int ≅ Ɐ 'ret . ((int -> 'ret) -> 'ret)
 ```
 --
 ```f#
@@ -1158,7 +1186,7 @@ Let's look at a more concrete example.
 
 The way that I can represent an integer is by a universally quantified function that takes in whatever you want and returns that 'whatever you want' type.
 
-You hand me the function, and I pass in the value that I represent.
+You hand me the function, and I pass in the value of the int that I represent.
 
 So if I'm 5, I call your function with 5 and then hand you back the result you calculated in that function.
 
@@ -1177,12 +1205,21 @@ This is everything that we need to represent an existential.
 ```
              'a ≅ Ɐ 'ret . (('a  -> 'ret) -> 'ret)
 ```
---
-.merged[
-```
-∃ 'a . List<'a> ≅ Ɐ 'ret . ((∃ 'a . List<'a>  -> 'ret) -> 'ret)
-```
-]
+
+---
+
+# Implementing our existential
+
+<div>
+<pre><div class="remark-code"><div class="remark-code-line">             <span style="background: #ff7979">'a</span> ≅ Ɐ 'ret . ((<span style="background: #ff7979">'a</span>  -> 'ret) -> 'ret)
+</div></div><pre>
+</div>
+
+<div class="merged">
+<pre><div class="remark-code"><div class="remark-code-line"><span style="background: #ff7979">∃ 'a . List<'a></span> ≅ Ɐ 'ret . ((<span style="background: #ff7979">∃ 'a . List<'a></span>  -> 'ret) -> 'ret)
+</div></div><pre>
+</div>
+
 --
 .merged[
 ```
@@ -1204,7 +1241,7 @@ Have a think about that.
 
 What types of list does that function take?
 
-Given that it's taken an existentially quantified list, which could be any list, we can represent that as a function that works over all lists.
+Given that it's taken an existentially quantified list, which could be any list, we can represent that as a universally quantified function that works over all lists.
 
 This is the duality of universal and existential quantification.
 
@@ -1229,7 +1266,7 @@ We're able to use these things together to write our type now as two universally
 ]
 
 <div class="merged">
-<pre><div class="remark-code"><div class="remark-code-line">                ≅ Ɐ 'ret . (<span style="background: #1abc9c"> Ɐ 'a . (<span style="background: #e74c3c">List<'a> -> 'ret</span>) -> 'ret</span>)
+<pre><div class="remark-code"><div class="remark-code-line">                ≅ Ɐ 'ret . (<span style="background: #badc58"> Ɐ 'a . (<span style="background: #7ed6df">List<'a> -> 'ret</span>) -> 'ret</span>)
 </div></div><pre>
 </div>
 
@@ -1327,6 +1364,62 @@ class: agenda-6
 
 ---
 
+# Background: F# lists
+
+```f#
+type List<'T> =
+    | Empty
+    | Cons of Head: 'T * Tail: List<'T>
+```
+
+--
+
+<pre>
+<span style="background-color: #ff7979">Cons(42, <span style="background-color: #badc58">Cons (69, <span style="background-color: #7ed6df">Cons (613, Empty)</span>)</span>)</span>
+</pre>
+
+.half-width[
+![](./cons.png)
+]
+
+--
+
+👎 This syntax is pretty unwieldy.
+
+---
+
+# Background: F# lists
+
+```f#
+type List<'T> =
+    | ([])
+    | (::) of Head: 'T * Tail: List<'T>
+```
+
+F# actually uses *in-fix* notation.
+
+--
+
+```f#
+Cons(42, Cons(69, Cons(613, Empty)))
+```
+
+Becomes:
+
+```f#
+42::69::613::[]
+```
+
+--
+
+There is a syntax sugar which is identical to the above:
+
+```f#
+[42; 69; 613]
+```
+
+---
+
 # HLists
 
 Imagine a standard list:
@@ -1343,11 +1436,15 @@ Contrast this with a HList - _heterogenous_ list.
 let myHList = [1234; true; "Hello"]
 ```
 
-(This is not valid F#!)
+P.S. This is not valid F#!
 
 --
 
 <hr>
+
+How do we represent a HList in the type system?
+
+--
 
 .merged[
 ```f#
@@ -1379,6 +1476,8 @@ Nick's HList example: https://pastebin.com/a4BJrA64
 
 ---
 
+name: hlists
+
 # HLists
 
 The types of the elements are represented in the type of the HList.
@@ -1397,8 +1496,6 @@ val myList : HList<int -> bool -> string -> unit>
 
 We use functions as they are syntactically _convenient_.
 
-They are syntactic sugar for:
-
 ```f#
 val myList :
     HList<
@@ -1407,7 +1504,19 @@ val myList :
                 FSharpFunc<string, unit>>>>
 ```
 
+This is a similar structure to the `Cons(..., Cons(..., Empty))` from before.
+
 ---
+
+template: hlists
+
+.important[
+The elements of HList are represented in the generic type argument.
+]
+
+---
+
+name: what-is-hlist
 
 # What is `HList`?
 
@@ -1426,12 +1535,22 @@ and HListConsBinder<'hlist> =
     abstract member Apply : HListConsEvaluator<'hlist,'ret> -> 'ret
 
 and HListConsEvaluator<'hlist, 'ret> =
-    abstract member Eval : 'element
-                        -> 'rest HList
-                        -> Teq<'hlist, 'element -> 'rest>
+    abstract member Eval : 'head
+                        -> 'tail HList
+                        -> Teq<'hlist, 'head -> 'tail>
                         -> 'ret
 ```
 ]
+
+--
+
+Contrast this to a standard F# list:
+
+```f#
+type List<'T> =
+    | Empty
+    | Cons of Head: 'T * Tail: List<'T>
+```
 
 ---
 
@@ -1448,10 +1567,14 @@ module HList =
 .merged[
 ```f#
 
-    let cons (element : 'element) (list : HList<'rest>) =
-        Cons { new HListConsBinder<'element -> 'rest> with
+    let cons
+        (element : 'head)
+        (list : HList<'tail>)
+        : HList<'head -> 'tail>
+        =
+        Cons { new HListConsBinder<'head -> 'tail> with
             member __.Apply e =
-                e.Eval element list Teq.refl<'element -> 'rest>
+                e.Eval element list Teq.refl<'head -> 'tail>
         }
 ```
 ]
@@ -1464,7 +1587,7 @@ module HList =
 ```f#
 module HList =
 
-    let head<'element, 'rest> (list : HList<'element -> 'rest)) =
+    let head<'head, 'tail> (list : HList<'head -> 'tail)) =
         match list with
         | Empty teq -> failwith "Impossible"
 ```
@@ -1481,6 +1604,10 @@ module HList =
 ```
 ]
 
+.important[
+Deconstruction is completely type safe.
+]
+
 ---
 
 # Deconstructing a HList
@@ -1489,7 +1616,7 @@ module HList =
 ```f#
 module HList =
 
-    let tail (list : ('element -> 'rest) HList) : HList<'rest> =
+    let tail (list : ('head -> 'tail) HList) : HList<'tail> =
         match list with
         | Empty teq -> failwith "Impossible"
 ```
@@ -1502,7 +1629,7 @@ module HList =
                 { new HListConsEvaluator<_,_> with
                     member __.Eval element rest teq =
                         let teq = teq |> Teq.range |> congHList
-                        xs |> Teq.castTo teq
+                        rest |> Teq.castTo teq
                 }
 ```
 ]
@@ -1528,6 +1655,20 @@ module HList =
 
 ---
 
+# HLists
+
+Key takeaways:
+
+.important[
+The elements of HList are represented in the generic type argument.
+]
+
+.important[
+Deconstruction is completely type safe.
+]
+
+---
+
 template: agenda
 class: agenda-7
 
@@ -1549,3 +1690,11 @@ class: agenda-7
 
 - **Complete HList Example** - _Nicholas Cowle_<br>
     https://pastebin.com/a4BJrA64
+
+---
+
+class: bold
+
+# Thanks for listening 👍
+
+### Questions?
