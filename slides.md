@@ -205,6 +205,20 @@ let baz : MyLittleType = null
 
 --
 
+```c#
+MyLittleType baz = null;
+```
+
+---
+
+template: nulls-in-fsharp
+
+<hr>
+
+```f#
+let baz : MyLittleType = null
+```
+
 .error[
 `error FS0043: The type 'MyLittleType' does not have 'null' as a proper value`
 ]
@@ -275,15 +289,28 @@ template: discriminated-unions
 
 ```f#
 let instance = Some { Foo = "Hello world"; Bar = 5 }
+```
 
+--
+
+.merged[
+```f#
 match instance with
 | None ->
     printfn "There is nothing here 😢"
+```
+]
+--
+.merged[
+```f#
 
 | Some underlyingValue ->
     printfn "Foo is '%s'" underlyingValue.Foo
     (* ==> Foo is 'Hello world' *)
 ```
+]
+
+--
 
 This is called _pattern matching_.
 
@@ -692,9 +719,15 @@ let valid = Add (Const 1) (Const 1)
 👎 Also allows:
 
 ```f#
-let invalid1 = Add (IsZero (Const 1)) (Const 1)
-let invalid2 = If (Const 1) (Const 2) (Const 3)
-let invalid3 = If (Const 1) (IsZero (Const 2)) (Const 3)
+let addBoolToInt = Add (IsZero (Const 1)) (Const 1)
+```
+--
+```f#
+let ifOnInt = If (Const 1) (Const 2) (Const 3)
+```
+--
+```f#
+let differentThenElse = If (Const 1) (IsZero (Const 2)) (Const 3)
 ```
 
 These don't make any sense!
@@ -850,13 +883,13 @@ let bad : Expr<bool> = Const (Teq.refl, 1)
 🎉️ This won't compile!
 
 .error[
-<pre>
+```
 error FS0001: Type mismatch. Expecting a
-    'Teq&lt;int,bool&gt;'
+    'Teq<int,bool>'
 but given a
-    'Teq&lt;int,int&gt;'
+    'Teq<int,int>'
 The type 'bool' does not match the type 'int'
-</pre>
+```
 ]
 
 ---
@@ -955,10 +988,13 @@ module Teq =
 ```f#
 
     let cast<'T,'U>
-        (Refl (tToU, uToT) : Teq<'T, 'U>)
+        (teq : Teq<'T, 'U>)
         (value : 'T)
         : 'U =
-        tToU value
+
+        match teq with
+        | Refl (tToU, uToT) ->
+            tToU value
 ```
 ]
 
@@ -1594,7 +1630,7 @@ type List<'T> =
 ```f#
 module HList =
 
-    let empty = Empty Teq.refl
+    let empty : HList<unit> = Empty Teq.refl
 ```
 ]
 --
@@ -1630,24 +1666,11 @@ P.S. the implementation is unimportant and trivial.
 --
 
 ```f#
-val congHList : Teq<'a,'b> -> Teq<HList<'a>, HList<'b>>
-```
-
---
-
-.merged[
-```f#
 module Teq =
+    val castFrom : Teq<'a,'b> : 'b -> 'a
+
     val domain : Teq<'a -> 'b, 'c -> 'd> -> Teq<'a, 'c>
 ```
-]
---
-.merged[
-```f#
-
-    val range  : Teq<'a -> 'b, 'c -> 'd> -> Teq<'b, 'd>
-```
-]
 
 ---
 
@@ -1655,7 +1678,7 @@ module Teq =
 
 .merged[
 ```f#
-let head<'head, 'tail> (list : HList<'head -> 'tail)) =
+let head<'head, 'tail> (list : HList<'head -> 'tail>)) : 'head =
     match list with
     | Empty teq -> failwith "Impossible"
 ```
@@ -1681,7 +1704,7 @@ let head<'head, 'tail> (list : HList<'head -> 'tail)) =
 .merged[
 ```f#
 
-                    let teq = Teq.domain teq
+                    let domainTeq = Teq.domain teq
                     (* Teq<'head, 'headX> *)
 ```
 ]
@@ -1689,7 +1712,7 @@ let head<'head, 'tail> (list : HList<'head -> 'tail)) =
 .merged[
 ```f#
 
-                    Teq.cast teq element
+                    Teq.castFrom domainTeq element
                     (* 'head *)
             }
 ```
@@ -1699,60 +1722,6 @@ let head<'head, 'tail> (list : HList<'head -> 'tail)) =
 
 .important[
 Deconstruction is completely type safe.
-]
-
----
-
-# Deconstructing a HList
-
-.merged[
-```f#
-let tail (list : ('head -> 'tail) HList) : HList<'tail> =
-    match list with
-    | Empty teq -> failwith "Impossible"
-```
-]
---
-.merged[
-```f#
-    | Cons consCrate ->
-        consCrate.Apply
-            { new HListConsEvaluator<'head -> 'tail, _> with
-```
-]
---
-.merged[
-```f#
-                member this.Eval<'headX, 'tailX>
-                    (element : 'headX)
-                    (rest : HList<'tailX>)
-                    (teq : Teq<'head->'tail, 'headX->'tailX>) =
-```
-]
---
-.merged[
-```f#
-
-                    let rangeTeq = Teq.range teq
-                    (* Teq<'tail,'tailX> *)
-```
-]
---
-.merged[
-```f#
-
-                    let teq = congHList rangeTeq
-                    (* Teq<HList<'tail>, HList<'tailX>> *)
-```
-]
---
-.merged[
-```f#
-
-                    Teq.castTo teq rest
-                    (* HList<'tail> *)
-            }
-```
 ]
 
 ---
